@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export default function Kameralar() {
-  // Eski kameralar ro'yxati
+  
   const initialCameras = [
     { id: 1, nom: "1-Kamera", xona: "1-xona" },
     { id: 2, nom: "2-Kamera", xona: "1-xona" },

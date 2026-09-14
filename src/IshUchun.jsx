@@ -8,7 +8,7 @@ export default function IshchiUchun() {
     familya: "",
     yosh: "",
     kategoriya: "",
-    status: "pending", // 🔹 admin hali qabul qilmagan
+    status: "pending", 
   });
   const [loading, setLoading] = useState(false);
 

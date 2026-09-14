@@ -1,7 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const API_URL = "https://298b1070ddfa6308.mokky.dev/Ishchilar";
+
 export default function AsosiyPanel() {
+  const [pendingCount, setPendingCount] = useState(0);
+
+
+  const fetchPending = async () => {
+    try {
+      const res = await fetch(`${API_URL}?status=pending`);
+      const data = await res.json();
+      setPendingCount(data.length);
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPending();
+
+    const interval = setInterval(fetchPending, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const buttonStyle = {
     display: "block",
     width: "180px",
@@ -30,6 +52,7 @@ export default function AsosiyPanel() {
         fontFamily: "Poppins, sans-serif",
       }}
     >
+
       <div
         style={{
           width: "260px",
@@ -88,6 +111,7 @@ export default function AsosiyPanel() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          position: "relative", 
         }}
       >
         <h1 style={{ color: "#ff8c00", fontSize: "2.5rem", marginBottom: "10px" }}>
@@ -101,6 +125,37 @@ export default function AsosiyPanel() {
           alt=""
           style={{ width: "280px", marginTop: "30px", opacity: 0.9 }}
         />
+
+        <a
+          href="/ishchilar"
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            fontSize: "28px",
+            textDecoration: "none",
+            color: "#ff8c00",
+          }}
+        >
+          🔔
+          {pendingCount > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: "-8px",
+                right: "-8px",
+                background: "red",
+                color: "white",
+                borderRadius: "50%",
+                padding: "2px 6px",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              {pendingCount}
+            </span>
+          )}
+        </a>
       </div>
     </div>
   );

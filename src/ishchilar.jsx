@@ -13,12 +13,18 @@ export default function Ishchilar() {
     kategoriya: "",
   });
 
-  // 🔹 Ishchilarni olish
+  const [pendingCount, setPendingCount] = useState(0);
+
+
   const fetchIshchilar = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
       setIshchilar(data);
+
+
+      const pending = data.filter((x) => x.status === "pending").length;
+      setPendingCount(pending);
     } catch (err) {
       console.error("Xatolik:", err);
     }
@@ -26,13 +32,14 @@ export default function Ishchilar() {
 
   useEffect(() => {
     fetchIshchilar();
+    const interval = setInterval(fetchIshchilar, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 🔹 Inputlarni boshqarish
+
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // 🔹 Qo‘shish yoki yangilash
   const saveIshchi = async () => {
     if (!formData.ism || !formData.familya || !formData.yosh || !formData.kategoriya) {
       alert("Barcha maydonlarni to‘ldiring!");
@@ -41,14 +48,13 @@ export default function Ishchilar() {
 
     try {
       if (editingId) {
-        // ✏️ Tahrirlash
+  
         await fetch(`${API_URL}/${editingId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
       } else {
-        // ➕ Admin yangi ishchi qo‘shmoqda
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -64,18 +70,19 @@ export default function Ishchilar() {
     }
   };
 
-  // ❌ O‘chirish
+ 
   const deleteIshchi = async (id) => {
     if (!window.confirm("Rostdan ham o‘chirmoqchimisiz?")) return;
     try {
       await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       setIshchilar(ishchilar.filter((x) => x.id !== id));
+      fetchIshchilar();
     } catch (err) {
       console.error("O‘chirishda xato:", err);
     }
   };
 
-  // ✏️ Tahrirlash
+ 
   const editIshchi = (ishchi) => {
     setEditingId(ishchi.id);
     setFormData({
@@ -87,7 +94,6 @@ export default function Ishchilar() {
     setFormVisible(true);
   };
 
-  // ✅ Qabul qilish
   const approveIshchi = async (id) => {
     await fetch(`${API_URL}/${id}`, {
       method: "PATCH",
@@ -97,17 +103,17 @@ export default function Ishchilar() {
     fetchIshchilar();
   };
 
-  // 🚫 Rad etish
   const rejectIshchi = async (id) => {
-    await fetch(`${API_URL}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "rejected" }),
-    });
-    fetchIshchilar();
+    if (!window.confirm("Ushbu ishchini rad qilmoqchimisiz?")) return;
+    try {
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      setIshchilar(ishchilar.filter((x) => x.id !== id));
+      setPendingCount((prev) => Math.max(prev - 1, 0));
+    } catch (err) {
+      console.error("Rad etishda xato:", err);
+    }
   };
 
-  // 🔹 Formni ochish/yopish
   const toggleForm = () => {
     setFormVisible(!formVisible);
     setEditingId(null);
@@ -141,7 +147,6 @@ export default function Ishchilar() {
 
       <h1 style={{ color: "#ff8c00", marginBottom: "20px" }}>👷 Ishchilar boshqaruvi</h1>
 
-      {/* 🔹 Admin yangi ishchi qo‘shishi uchun */}
       <button
         onClick={toggleForm}
         style={{
@@ -223,7 +228,6 @@ export default function Ishchilar() {
         </div>
       )}
 
-      {/* 🔹 Ishchilar ro‘yxati */}
       <div
         style={{
           display: "grid",
@@ -255,16 +259,16 @@ export default function Ishchilar() {
                     color:
                       ishchi.status === "approved"
                         ? "green"
-                        : ishchi.status === "rejected"
-                        ? "red"
-                        : "orange",
+                        : ishchi.status === "pending"
+                        ? "orange"
+                        : "gray",
                   }}
                 >
                   {ishchi.status === "approved"
                     ? "Qabul qilingan"
-                    : ishchi.status === "rejected"
-                    ? "Rad etilgan"
-                    : "Kutilmoqda"}
+                    : ishchi.status === "pending"
+                    ? "Kutilmoqda"
+                    : "Rad etilgan"}
                 </span>
               </p>
 
@@ -274,13 +278,13 @@ export default function Ishchilar() {
                   <>
                     <button
                       onClick={() => editIshchi(ishchi)}
-                      style={buttonStyle("#007bff")}
+                      style={buttonStyleFunc("#007bff")}
                     >
                       ✏️ Edit
                     </button>
                     <button
                       onClick={() => deleteIshchi(ishchi.id)}
-                      style={buttonStyle("#e74c3c")}
+                      style={buttonStyleFunc("#e74c3c")}
                     >
                       🗑 Delete
                     </button>
@@ -289,13 +293,13 @@ export default function Ishchilar() {
                   <>
                     <button
                       onClick={() => approveIshchi(ishchi.id)}
-                      style={buttonStyle("#28a745")}
+                      style={buttonStyleFunc("#28a745")}
                     >
                       ✅ Qabul qilish
                     </button>
                     <button
                       onClick={() => rejectIshchi(ishchi.id)}
-                      style={buttonStyle("#e74c3c")}
+                      style={buttonStyleFunc("#e74c3c")}
                     >
                       ❌ Rad etish
                     </button>
@@ -310,7 +314,6 @@ export default function Ishchilar() {
   );
 }
 
-// 🔹 Yordamchi stillar
 const inputStyle = {
   width: "100%",
   padding: "10px",
@@ -319,7 +322,7 @@ const inputStyle = {
   border: "1px solid #ccc",
 };
 
-const buttonStyle = (bg) => ({
+const buttonStyleFunc = (bg) => ({
   backgroundColor: bg,
   color: "white",
   border: "none",
